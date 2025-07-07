@@ -70,8 +70,6 @@ export default {
                 console.log('Logout successfully.');
             } catch (error) {
                 console.error('Logout API failed:', error?.response?.data || error.message);
-            } finally {
-                this.$router.push('/login');
             }
         },
 

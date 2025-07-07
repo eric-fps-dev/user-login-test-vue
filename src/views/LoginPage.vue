@@ -152,7 +152,7 @@ export default {
                 const data = res.data.data
 
                 alert('Login success! Welcome');
-                this.$router.push('/me');
+                this.$router.push('/ws-test'); 
                 this.errorMessage = '';
             } catch (error) {
                 this.errorMessage = error.response?.data?.message || 'Login failed';

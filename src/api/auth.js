@@ -1,7 +1,9 @@
 import axios from 'axios';
+import config from './config';
+import { gotoCognitoLogin } from '../utils/cognito';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: config.USER_API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -11,7 +13,10 @@ const api = axios.create({
 const WHITELIST_URLS = [
     '/auth/verify-credentials',
     '/auth/send-sms-code',
-    '/auth/verify-sms-code-login'    
+    '/auth/verify-sms-code-login',
+    '/auth/callback',
+    '/auth/refresh',
+    '/auth/logout'
 ];
 
 
@@ -27,6 +32,31 @@ api.interceptors.request.use(
         return Promise.reject(error);
     }
 );
+
+api.interceptors.response.use(
+    response => response,
+    async (error) =>  {
+        const originalRequest = error.config;
+        if (
+            error.response &&
+            error.response.status === 401 &&
+            !originalRequest._retry &&
+            !WHITELIST_URLS.some(url => originalRequest.url.includes(url))
+        ) {
+            originalRequest._retry = true;
+            try {
+                await api.post('/auth/refresh')
+                return api(originalRequest);
+            } catch (refreshErr) {
+                gotoCognitoLogin();
+                return Promise.reject(refreshErr);
+            }
+        }
+        return Promise.reject(error)
+    }
+)
+
+export default api;
 
 
 export const verifyCredentials = (username, password) => 
@@ -53,6 +83,10 @@ export const logout = () => {
 }
 
 export const getCurrentUser = () => {
-    return api.get('/users/me');
+    return api.get('/user/me');
+}
+
+export const callback = (code) => {
+    return api.post('/auth/callback', { code });
 }
 

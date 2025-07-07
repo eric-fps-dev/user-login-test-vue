@@ -1,9 +1,12 @@
 <template>
     <div class="login-wrapper">
         <div class="login-container">
-            <h2>Welcome!</h2>
-            <p>Your Are Successfully Logged In.</p>
-            <button @click="handleLogout">Logout</button>
+            <h2>You have safely logged out.</h2>
+            <p>Returning to the login page...</p>
+            <p v-if="logoutRes">
+                <span style="color:#888;font-size:0.96em;">Logout Result:</span>
+                <pre style="font-size:0.97em;">{{ logoutRes | pretty }}</pre>
+            </p>
         </div>
     </div>
 </template>
@@ -13,16 +16,15 @@
 import { logout } from '@/api/auth';
 
 export default {
-    methods: {
-        async handleLogout() {
-            try {
-                await logout();
-                console.log('Logout successfully.');
-            } catch (error) {
-                console.warn('Logout API failed:', error?.response?.data || error.message);
-            }
-             this.$router.push('/login');
-        }
+    mounted() {
+    const resStr = window.localStorage.getItem('lastLogoutRes');
+    if (resStr) {
+      this.logoutRes = JSON.parse(resStr);
+      window.localStorage.removeItem('lastLogoutRes');
     }
+    setTimeout(() => {
+      this.$router.push('/');
+    }, 1800);
+  }
 }
 </script>

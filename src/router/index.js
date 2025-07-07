@@ -1,25 +1,28 @@
 import { createRouter, createWebHistory } from "vue-router";
-import LoginPage from '@/views/LoginPage.vue';
+import CallbackPage from '@/views/Callback.vue';    
 import LogoutPage from "@/views/LogoutPage.vue";
 import ProfilePage from "@/views/UserProfile.vue"
+import WebSocketTestPage from "@/views/WebSocketTest.vue";
 import { getCurrentUser } from "../api/auth";
+import { gotoCognitoLogin } from '@/utils/cognito';
 
 const routes = [
     {
         path: '/',
-        redirect: '/login'
+        redirect: '/ws-test'
     },
 
     {
-        path: '/login',
-        name: 'Login',
-        component: LoginPage
-    }, 
+        path: '/callback',
+        name: 'Callback',
+        component: CallbackPage
+    },
 
     {
-        path: '/logout',
-        name: 'Logout',
-        component: LogoutPage
+        path: '/logout-success',
+        name: 'LogoutSuccess',
+        component: LogoutPage,
+        meta: { requiresAuth: false } 
     },
 
     {
@@ -27,7 +30,14 @@ const routes = [
         name: 'Me',
         component: ProfilePage,
         meta: { requiresAuth: true } // require login to visit
-    }
+    },
+
+    {
+        path: '/ws-test',
+        name: 'WebSocketTest',
+        component: WebSocketTestPage,
+        meta: { requiresAuth: true }
+      }
 ];
 
 const router = createRouter({
@@ -37,17 +47,18 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
     // if the route no need to login, let it pass
-    if ( !to.meta.requiresAuth) {
+/*     console.log("Router beforeEach:", to.path, "requiresAuth?", to.meta.requiresAuth);
+ */
+    if (!to.meta.requiresAuth) {
         return next();
     }
-
     try {
         await getCurrentUser();
         next();
     } catch(error) {
-        console.warn('Not authenticated or session expired:', error);
-        // not logined or token invalid, jump to login page
-        next('/login');
+        console.warn('Not authenticated, will gotoCognitoLogin()', error);
+        // not logined or token invalid, jump to Cognito page
+        gotoCognitoLogin();
     }
 });
 
